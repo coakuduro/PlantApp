@@ -19,13 +19,13 @@ delegate void AddMessage(string sNewMessage);
 
 namespace PlantApp
 {
-
+    /*sA GITOM*/
     public partial class FormMain : Form
     {
         public const int PORT = 8888;
         public const string LED_ON= "L_ON";
         public const string LED_OFF = "L_OFF";
-
+        public int a = 0;
         private Socket m_sock;                      // Server connection
         private byte[] m_byBuff = new byte[256];    // Recieved data buffer
         private event AddMessage m_AddMessage;				// Add Message Event handler for Form
