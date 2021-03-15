@@ -31,6 +31,12 @@ namespace PlantApp
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FormMain));
+            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea2 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
+            System.Windows.Forms.DataVisualization.Charting.Legend legend2 = new System.Windows.Forms.DataVisualization.Charting.Legend();
+            System.Windows.Forms.DataVisualization.Charting.Series series4 = new System.Windows.Forms.DataVisualization.Charting.Series();
+            System.Windows.Forms.DataVisualization.Charting.Series series5 = new System.Windows.Forms.DataVisualization.Charting.Series();
+            System.Windows.Forms.DataVisualization.Charting.Series series6 = new System.Windows.Forms.DataVisualization.Charting.Series();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.btn_flash_schedule = new System.Windows.Forms.Button();
             this.label4 = new System.Windows.Forms.Label();
@@ -74,9 +80,22 @@ namespace PlantApp
             this.label17 = new System.Windows.Forms.Label();
             this.m_tbMessage = new System.Windows.Forms.TextBox();
             this.btn_Send = new System.Windows.Forms.Button();
+            this.axWinsock1 = new AxMSWinsockLib.AxWinsock();
+            this.btn_clean = new System.Windows.Forms.Button();
+            this.chart1 = new System.Windows.Forms.DataVisualization.Charting.Chart();
+            this.btn_load = new System.Windows.Forms.Button();
+            this.btn_test = new System.Windows.Forms.Button();
+            this.list_display = new System.Windows.Forms.ComboBox();
+            this.maskedTextBox1 = new System.Windows.Forms.MaskedTextBox();
+            this.calendar_StartDate = new System.Windows.Forms.DateTimePicker();
+            this.chkbox_date = new System.Windows.Forms.CheckBox();
+            this.calendar_StopDate = new System.Windows.Forms.DateTimePicker();
+            this.btn_loadSD = new System.Windows.Forms.Button();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.axWinsock1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.chart1)).BeginInit();
             this.SuspendLayout();
             // 
             // groupBox1
@@ -508,11 +527,144 @@ namespace PlantApp
             this.btn_Send.UseVisualStyleBackColor = true;
             this.btn_Send.Click += new System.EventHandler(this.btn_Send_Click);
             // 
+            // axWinsock1
+            // 
+            this.axWinsock1.Enabled = true;
+            this.axWinsock1.Location = new System.Drawing.Point(135, 503);
+            this.axWinsock1.Name = "axWinsock1";
+            this.axWinsock1.OcxState = ((System.Windows.Forms.AxHost.State)(resources.GetObject("axWinsock1.OcxState")));
+            this.axWinsock1.Size = new System.Drawing.Size(28, 28);
+            this.axWinsock1.TabIndex = 11;
+            this.axWinsock1.Error += new AxMSWinsockLib.DMSWinsockControlEvents_ErrorEventHandler(this.axWinsock1_Error);
+            this.axWinsock1.DataArrival += new AxMSWinsockLib.DMSWinsockControlEvents_DataArrivalEventHandler(this.axWinsock1_DataArrival);
+            this.axWinsock1.ConnectEvent += new System.EventHandler(this.axWinsock1_ConnectEvent);
+            this.axWinsock1.CloseEvent += new System.EventHandler(this.axWinsock1_CloseEvent);
+            // 
+            // btn_clean
+            // 
+            this.btn_clean.Location = new System.Drawing.Point(635, 400);
+            this.btn_clean.Name = "btn_clean";
+            this.btn_clean.Size = new System.Drawing.Size(75, 23);
+            this.btn_clean.TabIndex = 12;
+            this.btn_clean.Text = "clean";
+            this.btn_clean.UseVisualStyleBackColor = true;
+            this.btn_clean.Click += new System.EventHandler(this.btn_clean_Click);
+            // 
+            // chart1
+            // 
+            chartArea2.Name = "ChartArea1";
+            this.chart1.ChartAreas.Add(chartArea2);
+            legend2.Name = "Legend1";
+            this.chart1.Legends.Add(legend2);
+            this.chart1.Location = new System.Drawing.Point(39, 534);
+            this.chart1.Name = "chart1";
+            series4.ChartArea = "ChartArea1";
+            series4.Legend = "Legend1";
+            series4.Name = "Temp";
+            series5.ChartArea = "ChartArea1";
+            series5.Legend = "Legend1";
+            series5.Name = "Humidity";
+            series6.ChartArea = "ChartArea1";
+            series6.Legend = "Legend1";
+            series6.Name = "Light";
+            this.chart1.Series.Add(series4);
+            this.chart1.Series.Add(series5);
+            this.chart1.Series.Add(series6);
+            this.chart1.Size = new System.Drawing.Size(1646, 437);
+            this.chart1.TabIndex = 13;
+            this.chart1.Text = "chart1";
+            // 
+            // btn_load
+            // 
+            this.btn_load.Location = new System.Drawing.Point(1457, 374);
+            this.btn_load.Name = "btn_load";
+            this.btn_load.Size = new System.Drawing.Size(114, 23);
+            this.btn_load.TabIndex = 14;
+            this.btn_load.Text = "Draw";
+            this.btn_load.UseVisualStyleBackColor = true;
+            this.btn_load.Click += new System.EventHandler(this.button1_Click);
+            // 
+            // btn_test
+            // 
+            this.btn_test.Location = new System.Drawing.Point(1457, 455);
+            this.btn_test.Name = "btn_test";
+            this.btn_test.Size = new System.Drawing.Size(114, 23);
+            this.btn_test.TabIndex = 15;
+            this.btn_test.Text = "Generate values";
+            this.btn_test.UseVisualStyleBackColor = true;
+            this.btn_test.Click += new System.EventHandler(this.btn_test_Click);
+            // 
+            // list_display
+            // 
+            this.list_display.FormattingEnabled = true;
+            this.list_display.Items.AddRange(new object[] {
+            "Temperature",
+            "Humidity",
+            "Light"});
+            this.list_display.Location = new System.Drawing.Point(1457, 400);
+            this.list_display.Name = "list_display";
+            this.list_display.Size = new System.Drawing.Size(114, 21);
+            this.list_display.TabIndex = 17;
+            this.list_display.SelectedIndexChanged += new System.EventHandler(this.comboBox1_SelectedIndexChanged);
+            // 
+            // maskedTextBox1
+            // 
+            this.maskedTextBox1.Location = new System.Drawing.Point(701, 215);
+            this.maskedTextBox1.Name = "maskedTextBox1";
+            this.maskedTextBox1.Size = new System.Drawing.Size(100, 20);
+            this.maskedTextBox1.TabIndex = 18;
+            // 
+            // calendar_StartDate
+            // 
+            this.calendar_StartDate.Location = new System.Drawing.Point(906, 403);
+            this.calendar_StartDate.Name = "calendar_StartDate";
+            this.calendar_StartDate.Size = new System.Drawing.Size(200, 20);
+            this.calendar_StartDate.TabIndex = 19;
+            // 
+            // chkbox_date
+            // 
+            this.chkbox_date.AutoSize = true;
+            this.chkbox_date.Location = new System.Drawing.Point(1046, 374);
+            this.chkbox_date.Name = "chkbox_date";
+            this.chkbox_date.Size = new System.Drawing.Size(95, 17);
+            this.chkbox_date.TabIndex = 20;
+            this.chkbox_date.Text = "Only one date:";
+            this.chkbox_date.UseVisualStyleBackColor = true;
+            this.chkbox_date.CheckedChanged += new System.EventHandler(this.chkbox_date_CheckedChanged);
+            // 
+            // calendar_StopDate
+            // 
+            this.calendar_StopDate.Location = new System.Drawing.Point(1112, 403);
+            this.calendar_StopDate.Name = "calendar_StopDate";
+            this.calendar_StopDate.Size = new System.Drawing.Size(200, 20);
+            this.calendar_StopDate.TabIndex = 21;
+            // 
+            // btn_loadSD
+            // 
+            this.btn_loadSD.Location = new System.Drawing.Point(1457, 345);
+            this.btn_loadSD.Name = "btn_loadSD";
+            this.btn_loadSD.Size = new System.Drawing.Size(114, 23);
+            this.btn_loadSD.TabIndex = 22;
+            this.btn_loadSD.Text = "Load data SD card";
+            this.btn_loadSD.UseVisualStyleBackColor = true;
+            this.btn_loadSD.Click += new System.EventHandler(this.btn_loadSD_Click);
+            // 
             // FormMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(754, 540);
+            this.ClientSize = new System.Drawing.Size(1715, 993);
+            this.Controls.Add(this.btn_loadSD);
+            this.Controls.Add(this.calendar_StopDate);
+            this.Controls.Add(this.chkbox_date);
+            this.Controls.Add(this.calendar_StartDate);
+            this.Controls.Add(this.maskedTextBox1);
+            this.Controls.Add(this.list_display);
+            this.Controls.Add(this.btn_test);
+            this.Controls.Add(this.btn_load);
+            this.Controls.Add(this.chart1);
+            this.Controls.Add(this.btn_clean);
+            this.Controls.Add(this.axWinsock1);
             this.Controls.Add(this.btn_Send);
             this.Controls.Add(this.m_tbMessage);
             this.Controls.Add(this.label17);
@@ -532,6 +684,8 @@ namespace PlantApp
             this.groupBox2.PerformLayout();
             this.groupBox3.ResumeLayout(false);
             this.groupBox3.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.axWinsock1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.chart1)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -582,6 +736,17 @@ namespace PlantApp
         private TextBox m_tbMessage;
         private Button btn_Send;
         private Button btn_status;
+        private AxMSWinsockLib.AxWinsock axWinsock1;
+        private Button btn_clean;
+        private System.Windows.Forms.DataVisualization.Charting.Chart chart1;
+        private Button btn_load;
+        private Button btn_test;
+        private ComboBox list_display;
+        private MaskedTextBox maskedTextBox1;
+        private DateTimePicker calendar_StartDate;
+        private CheckBox chkbox_date;
+        private DateTimePicker calendar_StopDate;
+        private Button btn_loadSD;
     }
 }
 

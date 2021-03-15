@@ -14,6 +14,8 @@ using System.Threading;
 using System.Net.NetworkInformation;
 using NativeWifi;
 using System.Collections.ObjectModel;
+using System.Windows.Forms.DataVisualization.Charting;
+using System.IO;
 
 delegate void AddMessage(string sNewMessage);
 
@@ -22,6 +24,7 @@ namespace PlantApp
     /*sA GITOM*/
     public partial class FormMain : Form
     {
+        StringBuilder RxString = new StringBuilder();
         public const int PORT = 8888;
         public const string LED_ON= "L_ON";
         public const string LED_OFF = "L_OFF";
@@ -37,6 +40,8 @@ namespace PlantApp
         ThreadStart threadStart;
         bool status_flag = false;
         bool stat_light = false;
+        bool file_finish = true;
+        System.IO.StreamWriter file;
         public FormMain()
         {
             InitializeComponent();
@@ -107,15 +112,22 @@ namespace PlantApp
         {
             status_light.BackColor = System.Drawing.Color.Green;
             status_light.Text = "ON";
-            Send_data( convert_to_bytes(LED_ON));
-           
+            //  Send_data( convert_to_bytes(LED_ON));
+            if (axWinsock1.CtlState == (short)MSWinsockLib.StateConstants.sckConnected)
+            {
+                axWinsock1.SendData(convert_to_bytes(LED_ON));
+            }
+
         }
 
         private void btn_led_off_Click(object sender, EventArgs e)
         {
             status_light.BackColor = System.Drawing.Color.Red;
             status_light.Text = "OFF";
-            Send_data(convert_to_bytes(LED_OFF));
+            if (axWinsock1.CtlState == (short)MSWinsockLib.StateConstants.sckConnected)
+            {
+                axWinsock1.SendData(convert_to_bytes(LED_OFF));
+            }
         }
 
         private void timer_DateTime_Tick(object sender, EventArgs e)
@@ -191,41 +203,44 @@ namespace PlantApp
         }
         private void btnConnect_Click(object sender, System.EventArgs e)
         {
-            Cursor cursor = Cursor.Current;
-            Cursor.Current = Cursors.WaitCursor;
-            try
-            {
-                // Close the socket if it is still open
-                if (m_sock != null && m_sock.Connected)
-                {
-                    m_sock.Shutdown(SocketShutdown.Both);
-                    System.Threading.Thread.Sleep(10);
-                    m_sock.Close();
-                }
+            #region code_async_socket
+            /* Cursor cursor = Cursor.Current;
+             Cursor.Current = Cursors.WaitCursor;
+             try
+             {
+                 // Close the socket if it is still open
+                 if (m_sock != null && m_sock.Connected)
+                 {
+                     m_sock.Shutdown(SocketShutdown.Both);
+                     System.Threading.Thread.Sleep(10);
+                     m_sock.Close();
+                 }
 
-                // Create the socket object
-                m_sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-               // Define the Server address and port
-                IPEndPoint epServer = new IPEndPoint(IPAddress.Parse(txtServerAddress.Text),PORT);
-                m_sock.Blocking = false;
-                AsyncCallback onconnect = new AsyncCallback(OnConnect);
-                m_sock.BeginConnect(epServer, onconnect, m_sock);
-                if (m_sock.Connected)
-                {
-                    status_flag = true;
-                    GetTheThreadStarted();
-                }
+                 // Create the socket object
+                 m_sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                // Define the Server address and port
+                 IPEndPoint epServer = new IPEndPoint(IPAddress.Parse(txtServerAddress.Text),PORT);
+                 m_sock.Blocking = false;
+                 AsyncCallback onconnect = new AsyncCallback(OnConnect);
+                 m_sock.BeginConnect(epServer, onconnect, m_sock);
+                 if (m_sock.Connected)
+                 {
+                     status_flag = true;
+                     GetTheThreadStarted();
+                 }
 
-            }
-            catch (Exception ex)
-            {
-                status_flag = false;
+             }
+             catch (Exception ex)
+             {
+                 status_flag = false;
 
-                GetTheThreadStarted();
+                 GetTheThreadStarted();
 
-                MessageBox.Show(this, ex.Message, "Server Connect failed!");
-            }
-            Cursor.Current = cursor;
+                 MessageBox.Show(this, ex.Message, "Server Connect failed!");
+             }
+             Cursor.Current = cursor;*/
+            #endregion
+            axWinsock1.Connect(txtServerAddress.Text.ToString(), PORT.ToString());
         }
 
         public void OnConnect(IAsyncResult ar)
@@ -348,25 +363,33 @@ namespace PlantApp
         /// </summary>
         private void btn_Send_Click(object sender, System.EventArgs e)
         {
-            
-            // Check we are connected
-            if (m_sock == null || !m_sock.Connected)
-            {
-                MessageBox.Show(this, "Must be connected to Send a message");
-                return;
-            }
+            /* 
+             // Check we are connected
+             if (m_sock == null || !m_sock.Connected)
+             {
+                 MessageBox.Show(this, "Must be connected to Send a message");
+                 return;
+             }
 
-            // Read the message from the text box and send it
-            try
-            {
-                // Convert to byte array and send.
-                Byte[] byteDateLine = Encoding.ASCII.GetBytes(m_tbMessage.Text.ToCharArray());
-                m_sock.Send(byteDateLine, byteDateLine.Length, 0);
+             // Read the message from the text box and send it
+             try
+             {
+                 // Convert to byte array and send.
+                 Byte[] byteDateLine = Encoding.ASCII.GetBytes(m_tbMessage.Text.ToCharArray());
+                 m_sock.Send(byteDateLine, byteDateLine.Length, 0);
 
-            }
-            catch (Exception ex)
+             }
+             catch (Exception ex)
+             {
+                 MessageBox.Show(this, ex.Message, "Send Message Failed!");
+             }
+             */
+            //Send_data(convert_to_bytes("status"));
+            if (axWinsock1.CtlState == (short)MSWinsockLib.StateConstants.sckConnected)
             {
-                MessageBox.Show(this, ex.Message, "Send Message Failed!");
+                
+                axWinsock1.SendData(convert_to_bytes(m_tbMessage.Text.ToString()));
+               
             }
         }
         private Byte[] convert_to_bytes(string text)
@@ -381,15 +404,45 @@ namespace PlantApp
 
         private void btn_status_Click(object sender, EventArgs e)
         {
-            Send_data(convert_to_bytes("status"));
+            //Send_data(convert_to_bytes("status"));
+            if (axWinsock1.CtlState == (short)MSWinsockLib.StateConstants.sckConnected)
+            {
+                //   MessageBox.Show(ClsVar.SkupKomandi);
+
+                axWinsock1.SendData(convert_to_bytes("status"));
+                //  MessageBox.Show(ClsVar.SkupKomandi);
+            }
         }
         private void decode_message(String status)
         {
             string temp = "";
-            if (status.Contains('L') && status.Contains('H') && status.Contains('T'))
+            if (status.Contains(":") && status.Contains(";"))
+            {
+
+                file = new System.IO.StreamWriter(@"C:\Users\Aleksandar\Desktop\test1.txt",true);                       
+                file.Write(status);
+                file.Close();
+                // file.WriteLine(line);
+
+
+
+            }
+          
+            else if (status.Contains("card"))
+            {
+                m_lbRecievedData.Text += status.ToString();
+
+            }
+
+            else if (status.Contains("TIME"))
+            {
+                m_lbRecievedData.Text += status.ToString();
+
+            }
+            else if (status.Contains('L') && status.Contains('H') && status.Contains('T'))
             {
                 /* TURN ON/OFF LED*/
-                if (status.Contains("lof"))              
+                if (status.Contains("lof"))
                     stat_light = false;
                 else if (status.Contains("lon"))
                     stat_light = true;
@@ -430,6 +483,236 @@ namespace PlantApp
                 temp = "";
             }
 
+        }
+
+        private void axWinsock1_ConnectEvent(object sender, EventArgs e)
+        {
+            status_flag = true;
+            status_wifi.BackColor = System.Drawing.Color.Green;
+            status_wifi.Text = "Connected";
+           
+        }
+
+        private void axWinsock1_CloseEvent(object sender, EventArgs e)
+        {
+            status_flag = false;
+            status_wifi.BackColor = System.Drawing.Color.Red;
+            status_wifi.Text = "Not connected";
+        }
+
+        private void axWinsock1_Error(object sender, AxMSWinsockLib.DMSWinsockControlEvents_ErrorEvent e)
+        {
+            status_flag = false;
+            status_wifi.BackColor = System.Drawing.Color.Red;
+            status_wifi.Text = "Not connected";
+        }
+
+        private void axWinsock1_DataArrival(object sender, AxMSWinsockLib.DMSWinsockControlEvents_DataArrivalEvent e)
+        {
+            int a, b, c;
+            byte[] txt;
+
+            Byte[] bytBuf = new Byte[500];
+            Object buffer = (Object)bytBuf;
+            Object type = (Object)bytBuf.GetType();
+            axWinsock1.GetData(ref buffer);
+            RxString.Clear();
+            a = axWinsock1.BytesReceived;
+            txt = (byte[])buffer;
+            a = txt.Length;
+            for (b = 0; b < a; b++)
+            {
+
+
+                RxString.Append((char)txt[b]);
+
+
+            }
+             decode_message(RxString.ToString());
+           
+
+        }
+
+        private void btn_clean_Click(object sender, EventArgs e)
+        {
+            m_lbRecievedData.Clear();
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            int counter = 0;
+            string line;
+            
+
+
+            chart1.Series["Temp"].Points.Clear();
+            chart1.Series["Humidity"].Points.Clear();
+            chart1.Series["Light"].Points.Clear();
+            System.IO.StreamReader file = new System.IO.StreamReader(@"C:\Users\Aleksandar\Desktop\test1.txt");
+
+            chart1.ChartAreas[0].AxisX.IntervalType = DateTimeIntervalType.NotSet; // Da ispisuje po x osi sve vrednosti
+            chart1.ChartAreas[0].AxisX.Interval = 1; // // Da ispisuje po x osi sve vrednosti
+            chart1.ChartAreas[0].AxisY.IntervalType = DateTimeIntervalType.NotSet; // Da ispisuje po x osi sve vrednosti
+            chart1.ChartAreas[0].AxisY.Interval = 1; // // Da ispisuje po x osi sve vrednosti
+            if (chkbox_date.Checked)
+            {
+                while ((line = file.ReadLine()) != null)
+                {
+                    string[] subs = line.Split('/', '|', ':', 'T', 'H', 'L', ';');
+                    foreach (var sub in subs)
+                    {
+                        Console.WriteLine($"Substring: {sub}");
+                    }
+
+                    if (subs[1].Equals(calendar_StartDate.Value.Day.ToString()) && subs[0].Equals(calendar_StartDate.Value.Month.ToString()) && subs[2].Equals(calendar_StartDate.Value.Year.ToString()))
+                    {
+
+                        if (list_display.SelectedIndex == 0)
+                        {
+
+                            chart1.Series["Temp"].Points.AddXY(int.Parse(subs[3]), subs[7]);
+
+                        }
+                        if (list_display.SelectedIndex == 1)
+                        {
+                            chart1.ChartAreas[0].AxisY.IntervalType = DateTimeIntervalType.NotSet; // Da ispisuje po x osi sve vrednosti
+                            chart1.ChartAreas[0].AxisY.Interval = 3; // // Da ispisuje po x osi sve vrednosti
+                            chart1.Series["Humidity"].Points.AddXY(int.Parse(subs[3]), subs[9]);
+                        }
+                        if (list_display.SelectedIndex == 2)
+                        {
+                            chart1.ChartAreas[0].AxisY.IntervalType = DateTimeIntervalType.NotSet; // Da ispisuje po x osi sve vrednosti
+                            chart1.ChartAreas[0].AxisY.Interval = 10; // // Da ispisuje po x osi sve vrednosti
+                            chart1.Series["Light"].Points.AddXY(int.Parse(subs[3]), subs[11]);
+                        }
+                    }
+
+                }
+            }
+            else
+            {
+                while ((line = file.ReadLine()) != null)
+                {
+                    string[] subs = line.Split('/', '|', ':', 'T', 'H', 'L', ';');
+                    foreach (var sub in subs)
+                    {
+                        Console.WriteLine($"Substring: {sub}");
+                    }
+
+                    if ((int.Parse(subs[1])>=calendar_StartDate.Value.Day) && (int.Parse(subs[0]) >= calendar_StartDate.Value.Month) && (int.Parse(subs[2]) >= calendar_StartDate.Value.Year))
+                    {
+
+                        if (list_display.SelectedIndex == 0)
+                        {
+
+                            chart1.Series["Temp"].Points.AddXY(int.Parse(subs[3]), subs[7]);
+
+                        }
+                        if (list_display.SelectedIndex == 1)
+                        {
+                            chart1.ChartAreas[0].AxisY.IntervalType = DateTimeIntervalType.NotSet; // Da ispisuje po x osi sve vrednosti
+                            chart1.ChartAreas[0].AxisY.Interval = 3; // // Da ispisuje po x osi sve vrednosti
+                            chart1.Series["Humidity"].Points.AddXY(int.Parse(subs[3]), subs[9]);
+                        }
+                        if (list_display.SelectedIndex == 2)
+                        {
+                            chart1.ChartAreas[0].AxisY.IntervalType = DateTimeIntervalType.NotSet; // Da ispisuje po x osi sve vrednosti
+                            chart1.ChartAreas[0].AxisY.Interval = 10; // // Da ispisuje po x osi sve vrednosti
+                            chart1.Series["Light"].Points.AddXY(int.Parse(subs[3]), subs[11]);
+                        }
+                    }
+
+                }
+            }
+
+           /* while ((line = file.ReadLine()) != null)
+            {
+                System.Console.WriteLine(line);
+                counter++;
+            }
+            file.Close();*/
+
+ 
+
+            Random rdn = new Random();
+
+          
+
+            /*chart1.Series["Temp"].Points.AddXY
+                         (rdn.Next(0, 90), i);
+            chart1.Series["Humidity"].Points.AddXY
+            (rdn.Next(0, 90), rdn.Next(0, 10));*/
+
+            chart1.Series["Temp"].ChartType =
+                                SeriesChartType.FastLine;
+            chart1.Series["Temp"].Color = Color.Red;
+
+            chart1.Series["Humidity"].ChartType =
+                                SeriesChartType.FastLine;
+            chart1.Series["Humidity"].Color = Color.Blue;
+
+            chart1.Series["Light"].ChartType =
+                               SeriesChartType.FastLine;
+            chart1.Series["Light"].Color = Color.Green;
+            file.Close();
+        }
+
+        private void btn_test_Click(object sender, EventArgs e)
+        {
+            File.WriteAllText(@"C:\Users\Aleksandar\Desktop\test.txt", String.Empty);
+            Random rdn = new Random();
+            StringBuilder vrednost = new StringBuilder();
+            /* for (int i = 1; i < 16; i++)
+             {
+                 vrednost.Append(i.ToString());
+                 vrednost.Append('/');
+                 vrednost.Append('7');
+             }*/
+            System.IO.StreamWriter file = new System.IO.StreamWriter(@"C:\Users\Aleksandar\Desktop\test.txt");
+            for (int i = 0; i < 24; i++)
+            {
+                vrednost.Append("1/7/2021|");
+                vrednost.Append(i.ToString());
+                vrednost.Append(":10:10|T");
+                vrednost.Append(rdn.Next(23, 25).ToString());
+                vrednost.Append("|H");
+                vrednost.Append(rdn.Next(55, 60).ToString());
+                vrednost.Append("|L");
+                vrednost.Append(rdn.Next(0, 100).ToString());
+                vrednost.Append(';');
+                
+                file.WriteLine(vrednost);
+
+                vrednost.Clear();
+            }
+            file.Close();
+        }
+
+        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void chkbox_date_CheckedChanged(object sender, EventArgs e)
+        {
+            if (chkbox_date.Checked)
+            {
+                calendar_StopDate.Enabled = false;
+            }
+            else
+            {
+                calendar_StopDate.Enabled = true;
+            }
+        }
+
+        private void btn_loadSD_Click(object sender, EventArgs e)
+        {
+            if (axWinsock1.CtlState == (short)MSWinsockLib.StateConstants.sckConnected)
+            {
+                System.IO.File.WriteAllText(@"C:\Users\Aleksandar\Desktop\test1.txt", string.Empty);
+                axWinsock1.SendData(convert_to_bytes("data"));
+                
+            }
         }
     }
 }

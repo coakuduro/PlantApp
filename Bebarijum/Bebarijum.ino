@@ -30,21 +30,24 @@
  ** CLK - pin 13
  ** CS - pin 4 (for MKRZero SD: SDCARD_SS_PIN)
  */
+ 
  #define CS_SD 4
  #define LED 5
- #define LED_SENSOR A0
- 
+ #define LED_SENSOR A1
+ #define MOISTURE_SENSOR A0
 #include <SoftwareSerial.h>
 #include <DHT.h>;
 #include <SPI.h>
 #include <SD.h>
 #include "RTClib.h"
 
+/*Z Zbog elektrolize mora da se smanji ukupno vreme rada meraca vlaznosti */
 
-#define DHTPIN 7     // what pin we're connected to
+#define DHTPIN 6     // what pin we're connected to
 #define DHTTYPE DHT22   // DHT 22  (AM2302)
+
 DHT dht(DHTPIN, DHTTYPE); //// Initialize DHT sensor for normal 16mhz Arduino
-SoftwareSerial mySerial(3, 2); // RX, TX
+SoftwareSerial mySerial(9, 8); // RX, TX
 File myFile;
 RTC_DS3231 rtc;
 
@@ -55,12 +58,17 @@ float temp; //Stores temperature value
 bool led_status=false;
 int val_limit_light=150;
 char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
-
+const byte rtcTimerIntPin = 2;
+volatile byte flag = false;
+DateTime dt;
 void setup() {
   // Open serial communications and wait for port to open:
   String command;
   pinMode(LED,OUTPUT);
   pinMode(LED_SENSOR,INPUT);
+  pinMode (rtcTimerIntPin, INPUT);
+  attachInterrupt (0, rtc_interrupt,FALLING);
+  
   Serial.begin(9600);
   dht.begin();
   while (!Serial) {
@@ -69,34 +77,50 @@ void setup() {
 
  // set the data rate for the SoftwareSerial port
   mySerial.begin(74880);
+ 
   //mySerial.println("Hello, world?");
   Serial.flush();
   mySerial.flush();
+/* Ako se iskljuci napajanje sa cele ploce i proba da se prikljuci samo Arduino na racunar, zaglavice se program kod sekvence rtc.begin() zbog pozivanja wire.begin()koji ce samo visiti i nece program moci da nastavi dalje*/
+
+  if (! rtc.begin()) 
+  {
+    mySerial.println("Couldn't find RTC");
+    mySerial.flush();
   
-  if (! rtc.begin()) {
-    Serial.println("Couldn't find RTC");
-    Serial.flush();
-    abort();
   }
   else
-    Serial.println("RTC was found");
-  if (rtc.lostPower()) {
-      Serial.println("RTC lost power, let's set the time!");
+  {
+    mySerial.println("RTC was found");
+    rtc.disable32K();
+    rtc.disableAlarm(1);
+    rtc.disableAlarm(2);
+    rtc.clearAlarm(1);
+    rtc.clearAlarm(2);
+    rtc.writeSqwPinMode(DS3231_OFF); // Place SQW pin into alarm interrupt mode
+  
+     /*if (rtc.lostPower()) {
+      mySerial.println("RTC lost power, let's set the time!");
       // When time needs to be set on a new device, or after a power loss, the
       // following line sets the RTC to the date & time this sketch was compiled
       rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
       // This line sets the RTC with an explicit date & time, for example to set
       // January 21, 2014 at 3am you would call:
       // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
-    }
-    
-   if (!SD.begin(4)) {
-    Serial.println("SD card initialization failed!");
+    }    */
+  }
+  /*Kartica mora biti formatirana fat16 ili fat 32*/
+   if (!SD.begin(4))
+   {
+    mySerial.println(" SD card initialization failed!");
   }
   else
-  Serial.println("SD card initialization done.");
-  
+  {
+   mySerial.println(" SD card initialization done.");
   }
+  sei();
+  }
+
 /*****************************************************************************************************************************************************************************************************************************************
 ***********************KOMANDE************************************
 1.L_ON    PALI SVETLA
@@ -108,6 +132,17 @@ void setup() {
 *****************************************************************************************************************************************************************************************************************************************/
 void loop() { // run over and over
    String command;
+   
+  if(flag)
+  {
+     DateTime time = rtc.now();
+     mySerial.println(String(" DateTimeInterapt::TIMESTAMP_FULL:\t")+time.timestamp(DateTime::TIMESTAMP_FULL)); 
+     rtc.disableAlarm(1);
+    rtc.clearAlarm(1);
+     rtc.setAlarm1((time+TimeSpan(0,0,0,10)), DS3231_A1_Second );
+     flag=false;
+    }
+    
   if (mySerial.available()) {
      command=mySerial.readString();
      if(command.equals(led_on))
@@ -120,30 +155,32 @@ void loop() { // run over and over
       turn_led_off();
      command=""; 
      }
-     else if(command.equals("status"))
+     else if(command.equals("Alarm"))
      {
-      
-      int light_value=analogRead(A0);
-      hum = dht.readHumidity();
-      temp= dht.readTemperature();
-      mySerial.println("");
-      mySerial.println("L"+ (String)light_value +';');
-      //mySerial.print(light_value);
-      mySerial.println("H"+ (String)hum +';');
-    //  mySerial.print(hum);
-       mySerial.println("T" + (String)temp +';');
-    //  mySerial.print(temp);
-      if(led_status)
-          mySerial.println("lon");
-       else
-          mySerial.println("lof");
+        mySerial.println("Podesio Alarm"); 
+        dt=rtc.now();
+        rtc.setAlarm1((dt+TimeSpan(0,0,0,10)), DS3231_A1_Second );
+       
+     }
+     else if(command.equals("RTC"))
+     {
+       DateTime time = rtc.now();
+       //Full Timestamp
+       mySerial.println(String(" DateTime::TIMESTAMP_FULL:\t")+time.timestamp(DateTime::TIMESTAMP_FULL));
+     
+     }
+     else if(command.equals("data"))
+     {
+      myFile = SD.open("test.txt", FILE_READ);
+        mySerial.write(" ");
+       if (myFile) { 
+        while (myFile.available())
+        {
+        mySerial.write(myFile.read());
+        }
 
-
-  // if the file opened okay, write to it:
-  if (myFile) {
-       myFile = SD.open("test.txt", FILE_WRITE);
-       DateTime now = rtc.now();
-        myFile.print(now.year(), DEC);
+     /* DateTime now = rtc.now();
+      myFile.print(now.year(), DEC);
       myFile.print('/');
       myFile.print(now.month(), DEC);
       myFile.print('/');
@@ -168,17 +205,41 @@ void loop() { // run over and over
        else
           myFile.println(" lof");
 
-           myFile.println("\n\r");
+           myFile.println("\n\r");*/
+           
     myFile.close();
-    Serial.println("done.");
+    
   } else {
     // if the file didn't open, print an error:
     Serial.println("error opening test.txt");
   }
+      }
+     else if(command.equals("status"))
+     {
+      
+      int light_value=analogRead(LED_SENSOR);
+      hum = dht.readHumidity();
+      temp= dht.readTemperature();
+      mySerial.println("");
+      mySerial.println("L"+ (String)light_value +';');
+      //mySerial.print(light_value);
+      mySerial.println("H"+ (String)hum +';');
+    //  mySerial.print(hum);
+       mySerial.println("T" + (String)temp +';');
+    //  mySerial.print(temp);
+      if(led_status)
+          mySerial.println("lon");
+       else
+          mySerial.println("lof");
+          
+
+
+  // if the file opened okay, write to it:
+ 
     
      }
   }
- if(analogRead(LED_SENSOR)<150 && !led_status)  //umesto led_status moze digitalRead
+ /*if(analogRead(LED_SENSOR)<150 && !led_status)  //umesto led_status moze digitalRead
  {
   turn_led_on();
   //poslati aplikaciji da se upalio led. Ili uopste ne kontrolisati odavde led vec sve iz aplikacije mozgati
@@ -187,7 +248,7 @@ void loop() { // run over and over
   }
 
   hum = dht.readHumidity();
-  temp= dht.readTemperature();
+  temp= dht.readTemperature();*/
 }
 
 void turn_led_on()
@@ -202,3 +263,9 @@ void turn_led_off()
   led_status=false;
   
 }
+void rtc_interrupt ()
+{
+  
+   
+   flag = true;
+}  // end of rtc_interrupt
